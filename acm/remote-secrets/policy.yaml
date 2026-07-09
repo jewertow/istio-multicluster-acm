@@ -36,7 +36,7 @@ spec:
                     {{- $secret := (lookup "v1" "Secret" $source.metadata.name "istio-reader-service-account") }}
                     {{- $server := (index $source.spec.managedClusterClientConfigs 0).url }}
                     {{- $token := base64dec (index $secret.data "token") }}
-                    {{- $ca := index $secret.data "ca.crt" }}
+                    {{- $ca := (index $source.spec.managedClusterClientConfigs 0).caBundle }}
                     - apiVersion: v1
                       kind: Secret
                       metadata:
