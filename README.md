@@ -12,16 +12,18 @@ Deploy Istio across a fleet of OpenShift/Kubernetes clusters using ACM (Advanced
 
 ### Step 1: Label managed clusters
 
-Label each cluster that should join the Istio mesh:
+Label each cluster that should join the Istio mesh. ACM does not copy ManagedCluster labels to the corresponding namespaces on the hub, so both the ManagedCluster and its namespace must be labeled:
 
 ```bash
 kubectl label managedcluster <cluster-name> mesh=enabled
+kubectl label namespace <cluster-name> mesh=enabled
 ```
 
-Verify the label:
+Verify the labels:
 
 ```bash
 kubectl get managedclusters -l mesh=enabled
+kubectl get namespaces -l mesh=enabled
 ```
 
 ### Step 2: Create the policy namespace
@@ -95,4 +97,26 @@ Verify policy compliance:
 
 ```bash
 kubectl get policy istio-ca-certificate -n istio-policies
+```
+
+## Managed Service Accounts
+
+### Step 6: Create a ManagedServiceAccount per managed cluster
+
+Apply the Policy that creates a ManagedServiceAccount in each managed cluster's namespace on the hub. The policy is bound to `local-cluster` so the ConfigurationPolicy runs on the hub itself. It uses `namespaceSelector` to match namespaces that are both managed cluster namespaces (`cluster.open-cluster-management.io/managedCluster` exists) and labeled `mesh=enabled`:
+
+```bash
+kubectl apply -f acm/managed-service-accounts/
+```
+
+Verify policy compliance:
+
+```bash
+kubectl get policy managed-service-account -n istio-policies
+```
+
+Verify the ManagedServiceAccounts were created (one per managed cluster):
+
+```bash
+kubectl get managedserviceaccounts -A
 ```
