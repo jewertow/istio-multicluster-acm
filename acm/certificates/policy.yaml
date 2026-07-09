@@ -1,0 +1,48 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: istio-ca-certificate
+  namespace: istio-policies
+  annotations:
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/standards: Istio Service Mesh
+    policy.open-cluster-management.io/controls: Certificate Management
+spec:
+  remediationAction: enforce
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: istio-ca-certificate
+        spec:
+          remediationAction: enforce
+          severity: high
+          object-templates:
+            - complianceType: MustHave
+              objectDefinition:
+                apiVersion: v1
+                kind: Secret
+                metadata:
+                  name: cacerts
+                  namespace: istio-system
+                type: kubernetes.io/tls
+                data:
+                  tls.crt: '{{hub fromSecret "istio-policies" "istio-ca-cert" "tls.crt" hub}}'
+                  tls.key: '{{hub fromSecret "istio-policies" "istio-ca-cert" "tls.key" hub}}'
+                  ca.crt: '{{hub fromSecret "istio-policies" "istio-ca-cert" "ca.crt" hub}}'
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: mesh-clusters-istio-ca-certificate
+  namespace: istio-policies
+placementRef:
+  apiGroup: cluster.open-cluster-management.io
+  kind: Placement
+  name: mesh-clusters
+subjects:
+  - apiGroup: policy.open-cluster-management.io
+    kind: Policy
+    name: istio-ca-certificate

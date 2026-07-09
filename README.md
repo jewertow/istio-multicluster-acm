@@ -8,7 +8,9 @@ Deploy Istio across a fleet of OpenShift/Kubernetes clusters using ACM (Advanced
 - `kubectl` CLI configured to access the ACM hub cluster
 - Managed clusters imported into ACM
 
-## Step 1: Label managed clusters
+## Managed clusters and Placement
+
+### Step 1: Label managed clusters
 
 Label each cluster that should join the Istio mesh:
 
@@ -22,7 +24,7 @@ Verify the label:
 kubectl get managedclusters -l mesh=enabled
 ```
 
-## Step 2: Create the policy namespace
+### Step 2: Create the policy namespace
 
 Create a namespace on the hub cluster to hold ACM policies:
 
@@ -30,7 +32,7 @@ Create a namespace on the hub cluster to hold ACM policies:
 kubectl create namespace istio-policies
 ```
 
-## Step 3: Create the Placement for mesh clusters
+### Step 3: Create the Placement for mesh clusters
 
 Apply the Placement and ManagedClusterSetBinding. The ManagedClusterSetBinding grants the `istio-policies` namespace access to the `default` ManagedClusterSet. The Placement selects managed clusters with the label `mesh=enabled` and is shared by all ACM policies targeting mesh clusters (namespaces, certificates, etc.):
 
@@ -38,7 +40,9 @@ Apply the Placement and ManagedClusterSetBinding. The ManagedClusterSetBinding g
 kubectl apply -f acm/placement/
 ```
 
-## Step 4: Ensure the istio-system namespace on managed clusters
+## Namespace creation
+
+### Step 4: Ensure the istio-system namespace on managed clusters
 
 Apply the Policy and PlacementBinding that enforce the `istio-system` namespace on all mesh clusters:
 
@@ -58,3 +62,37 @@ kubectl get policy -n istio-policies
 ```
 
 All targeted clusters should show `Compliant` once the namespace has been created.
+
+## Certificate distribution
+
+### Step 5: Create the CA certificates and distribute to managed clusters
+
+Apply the cert-manager resources and ACM policy that create and distribute the Istio CA certificate:
+
+```bash
+kubectl apply -f acm/certificates/
+```
+
+This creates the following cert-manager resources on the hub cluster:
+
+- **ClusterIssuer** (`selfsigned`) — a self-signed issuer used to bootstrap the root CA.
+- **Certificate** (`root-ca`) — a self-signed root CA certificate used for signing.
+- **Issuer** (`root-ca`) — a CA issuer that references the root CA certificate.
+- **Certificate** (`istio-ca`) — an intermediate CA certificate for Istio, signed by the root CA.
+
+And the following ACM resources to distribute the certificate:
+
+- **Policy** (`istio-ca-certificate`) — contains a ConfigurationPolicy that creates the `cacerts` Secret in `istio-system` on managed clusters, using hub templates to pull certificate data from the hub.
+- **PlacementBinding** — binds the `mesh-clusters` Placement to the Policy.
+
+Verify the certificates are ready:
+
+```bash
+kubectl get certificates -n istio-policies
+```
+
+Verify policy compliance:
+
+```bash
+kubectl get policy istio-ca-certificate -n istio-policies
+```

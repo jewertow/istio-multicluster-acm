@@ -1,0 +1,26 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: root-ca
+  namespace: istio-policies
+spec:
+  isCA: true
+  commonName: Root CA
+  duration: 87600h
+  secretName: root-ca-cert
+  privateKey:
+    algorithm: RSA
+    size: 4096
+  issuerRef:
+    name: selfsigned
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: root-ca
+  namespace: istio-policies
+spec:
+  ca:
+    secretName: root-ca-cert
