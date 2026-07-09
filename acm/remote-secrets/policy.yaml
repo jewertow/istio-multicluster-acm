@@ -1,0 +1,86 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: istio-remote-secrets
+  namespace: istio-policies
+spec:
+  remediationAction: enforce
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: istio-remote-secrets
+        spec:
+          remediationAction: enforce
+          severity: high
+          evaluationInterval:
+            compliant: 2h
+            noncompliant: 10m
+          object-templates-raw: |
+            {{- range $target := (lookup "cluster.open-cluster-management.io/v1" "ManagedCluster" "" "").items }}
+            {{- if and (ne $target.metadata.name "local-cluster") (hasKey $target.metadata.labels "mesh") (eq (index $target.metadata.labels "mesh") "enabled") }}
+            - complianceType: mustonlyhave
+              objectDefinition:
+                apiVersion: work.open-cluster-management.io/v1
+                kind: ManifestWork
+                metadata:
+                  name: istio-remote-secrets
+                  namespace: {{ $target.metadata.name }}
+                spec:
+                  workload:
+                    manifests:
+                    {{- range $source := (lookup "cluster.open-cluster-management.io/v1" "ManagedCluster" "" "").items }}
+                    {{- if and (ne $source.metadata.name $target.metadata.name) (ne $source.metadata.name "local-cluster") (hasKey $source.metadata.labels "mesh") (eq (index $source.metadata.labels "mesh") "enabled") }}
+                    {{- $secret := (lookup "v1" "Secret" $source.metadata.name "istio-reader-service-account") }}
+                    {{- $server := (index $source.spec.managedClusterClientConfigs 0).url }}
+                    {{- $token := base64dec (index $secret.data "token") }}
+                    {{- $ca := index $secret.data "ca.crt" }}
+                    - apiVersion: v1
+                      kind: Secret
+                      metadata:
+                        name: istio-remote-secret-{{ $source.metadata.name }}
+                        namespace: istio-system
+                        labels:
+                          istio/multiCluster: "true"
+                        annotations:
+                          networking.istio.io/cluster: {{ $source.metadata.name }}
+                      type: Opaque
+                      stringData:
+                        {{ $source.metadata.name }}: |
+                          apiVersion: v1
+                          clusters:
+                          - cluster:
+                              certificate-authority-data: {{ $ca }}
+                              server: {{ $server }}
+                            name: {{ $source.metadata.name }}
+                          contexts:
+                          - context:
+                              cluster: {{ $source.metadata.name }}
+                              user: {{ $source.metadata.name }}
+                            name: {{ $source.metadata.name }}
+                          current-context: {{ $source.metadata.name }}
+                          kind: Config
+                          users:
+                          - name: {{ $source.metadata.name }}
+                            user:
+                              token: {{ $token }}
+                    {{- end }}
+                    {{- end }}
+            {{- end }}
+            {{- end }}
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: local-cluster-istio-remote-secrets
+  namespace: istio-policies
+placementRef:
+  apiGroup: cluster.open-cluster-management.io
+  kind: Placement
+  name: local-cluster
+subjects:
+  - apiGroup: policy.open-cluster-management.io
+    kind: Policy
+    name: istio-remote-secrets

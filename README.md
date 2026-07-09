@@ -120,3 +120,32 @@ Verify the ManagedServiceAccounts were created (one per managed cluster):
 ```bash
 kubectl get managedserviceaccounts -A
 ```
+
+## Remote secret distribution
+
+### Step 7: Distribute Istio remote secrets across clusters
+
+Apply the Policy that distributes Istio remote secrets for multi-cluster communication. The policy is bound to the `local-cluster` Placement so the ConfigurationPolicy runs on the hub. It uses managed cluster templates with `object-templates-raw` to:
+
+1. Range over all ManagedClusters labeled `mesh=enabled`.
+2. For each target cluster, create a ManifestWork in its namespace on the hub.
+3. For each other mesh cluster (source), look up the MSA token secret and API server URL.
+4. Construct a kubeconfig-style Secret and include it in the ManifestWork manifests.
+
+The ManifestWork agent on each managed cluster then creates the remote secrets in `istio-system`. This ensures that cluster A gets remote secrets for cluster B and C (and vice versa), enabling Istio to discover services across clusters.
+
+```bash
+kubectl apply -f acm/remote-secrets/
+```
+
+Verify policy compliance:
+
+```bash
+kubectl get policy istio-remote-secrets -n istio-policies
+```
+
+Verify the remote secrets were created on the managed clusters (one secret per remote cluster):
+
+```bash
+kubectl get secrets -n istio-system -l istio/multiCluster=true
+```
