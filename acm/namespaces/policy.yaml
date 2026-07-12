@@ -26,6 +26,8 @@ spec:
                 kind: Namespace
                 metadata:
                   name: istio-system
+                  labels:
+                    topology.istio.io/network: 'network-{{hub .ManagedClusterName hub}}'
             - complianceType: MustHave
               objectDefinition:
                 apiVersion: v1
