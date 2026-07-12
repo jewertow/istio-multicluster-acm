@@ -1,7 +1,7 @@
 apiVersion: policy.open-cluster-management.io/v1
 kind: Policy
 metadata:
-  name: istio-system-namespace
+  name: istio-namespaces
   namespace: istio-policies
   annotations:
     policy.open-cluster-management.io/categories: CM Configuration Management
@@ -15,7 +15,7 @@ spec:
         apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
         metadata:
-          name: istio-system-namespace
+          name: istio-namespaces
         spec:
           remediationAction: enforce
           severity: high
@@ -26,11 +26,17 @@ spec:
                 kind: Namespace
                 metadata:
                   name: istio-system
+            - complianceType: MustHave
+              objectDefinition:
+                apiVersion: v1
+                kind: Namespace
+                metadata:
+                  name: istio-cni
 ---
 apiVersion: policy.open-cluster-management.io/v1
 kind: PlacementBinding
 metadata:
-  name: mesh-clusters-istio-system-namespace
+  name: mesh-clusters-istio-namespaces
   namespace: istio-policies
 placementRef:
   apiGroup: cluster.open-cluster-management.io
@@ -39,4 +45,4 @@ placementRef:
 subjects:
   - apiGroup: policy.open-cluster-management.io
     kind: Policy
-    name: istio-system-namespace
+    name: istio-namespaces
