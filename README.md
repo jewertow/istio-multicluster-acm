@@ -39,7 +39,7 @@ kubectl create namespace istio-policies
 Apply the Placement and ManagedClusterSetBinding. The ManagedClusterSetBinding grants the `istio-policies` namespace access to the `default` ManagedClusterSet. The Placement selects managed clusters with the label `mesh=enabled` and is shared by all ACM policies targeting mesh clusters (namespaces, certificates, etc.):
 
 ```bash
-kubectl apply -f acm/placement/
+kubectl apply -f acm/service-mesh/placement/
 ```
 
 ## Service Mesh operator
@@ -49,7 +49,7 @@ kubectl apply -f acm/placement/
 Apply the Policy and PlacementBinding that install the Service Mesh operator via OLM on all mesh clusters:
 
 ```bash
-kubectl apply -f acm/servicemesh-operator/
+kubectl apply -f acm/service-mesh/operator/
 ```
 
 This creates:
@@ -70,7 +70,7 @@ kubectl get policy servicemeshoperator -n istio-policies
 Apply the Policy and PlacementBinding that enforce the `istio-system` and `istio-cni` namespaces on all mesh clusters:
 
 ```bash
-kubectl apply -f acm/namespaces/
+kubectl apply -f acm/service-mesh/namespaces/
 ```
 
 This creates:
@@ -93,7 +93,7 @@ All targeted clusters should show `Compliant` once the namespaces have been crea
 Apply the cert-manager resources and ACM policy that create and distribute the Istio CA certificate:
 
 ```bash
-kubectl apply -f acm/certificates/
+kubectl apply -f acm/service-mesh/certificates/
 ```
 
 This creates the following cert-manager resources on the hub cluster:
@@ -127,7 +127,7 @@ kubectl get policy istio-ca-certificate -n istio-policies
 Apply the Policy and PlacementBinding that create the IstioCNI and Istio resources on all mesh clusters:
 
 ```bash
-kubectl apply -f acm/istio/
+kubectl apply -f acm/service-mesh/istio/
 ```
 
 This creates:
@@ -155,7 +155,7 @@ kubectl get istio -A
 Apply the Policy that creates a ManagedServiceAccount in each managed cluster's namespace on the hub. The policy is bound to `local-cluster` so the ConfigurationPolicy runs on the hub itself. It uses `namespaceSelector` to match namespaces that are both managed cluster namespaces (`cluster.open-cluster-management.io/managedCluster` exists) and labeled `mesh=enabled`:
 
 ```bash
-kubectl apply -f acm/managed-service-accounts/
+kubectl apply -f acm/service-mesh/managed-service-accounts/
 ```
 
 Verify policy compliance:
@@ -171,7 +171,7 @@ kubectl get policy managed-service-account -n istio-policies
 Apply the Policy and PlacementBinding that create a ClusterRoleBinding on all mesh clusters, granting the `istio-reader-service-account` ManagedServiceAccount the `istio-reader-clusterrole-istio-system` ClusterRole:
 
 ```bash
-kubectl apply -f acm/reader-clusterrolebinding/
+kubectl apply -f acm/service-mesh/reader-clusterrolebinding/
 ```
 
 This creates:
@@ -199,7 +199,7 @@ Apply the Policy that distributes Istio remote secrets for multi-cluster communi
 The ManifestWork agent on each managed cluster then creates the remote secrets in `istio-system`. This ensures that cluster A gets remote secrets for cluster B and C (and vice versa), enabling Istio to discover services across clusters.
 
 ```bash
-kubectl apply -f acm/remote-secrets/
+kubectl apply -f acm/service-mesh/remote-secrets/
 ```
 
 Verify policy compliance:
