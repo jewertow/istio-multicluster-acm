@@ -148,9 +148,36 @@ kubectl get istiocni -A
 kubectl get istio -A
 ```
 
+## East-west gateway
+
+### Step 8: Deploy the east-west gateway on managed clusters
+
+Apply the Policy and PlacementBinding that create a Kubernetes Gateway for cross-network traffic on all mesh clusters:
+
+```bash
+kubectl apply -f acm/service-mesh/east-west-gateway/
+```
+
+This creates:
+
+- **Policy** (`east-west-gateway`) — contains a ConfigurationPolicy that enforces a Gateway resource in `istio-system` using the `istio` GatewayClass, with a TLS passthrough listener on port 15443 for `*.local` hostnames. The gateway is labeled with `topology.istio.io/network` set to `network-<clusterName>`.
+- **PlacementBinding** — binds the `mesh-clusters` Placement to the Policy so it is applied to the selected clusters.
+
+Verify policy compliance:
+
+```bash
+kubectl get policy east-west-gateway -n istio-policies
+```
+
+Verify the gateway is running on managed clusters:
+
+```bash
+kubectl get gateways -n istio-system
+```
+
 ## Managed Service Accounts
 
-### Step 8: Create a ManagedServiceAccount per managed cluster
+### Step 9: Create a ManagedServiceAccount per managed cluster
 
 Apply the Policy that creates a ManagedServiceAccount in each managed cluster's namespace on the hub. The policy is bound to `local-cluster` so the ConfigurationPolicy runs on the hub itself. It uses `namespaceSelector` to match namespaces that are both managed cluster namespaces (`cluster.open-cluster-management.io/managedCluster` exists) and labeled `mesh=enabled`:
 
@@ -166,7 +193,7 @@ kubectl get policy managed-service-account -n istio-policies
 
 ## Istio reader ClusterRoleBinding
 
-### Step 9: Bind the ManagedServiceAccount to the istio-reader ClusterRole
+### Step 10: Bind the ManagedServiceAccount to the istio-reader ClusterRole
 
 Apply the Policy and PlacementBinding that create a ClusterRoleBinding on all mesh clusters, granting the `istio-reader-service-account` ManagedServiceAccount the `istio-reader-clusterrole-istio-system` ClusterRole:
 
@@ -187,7 +214,7 @@ kubectl get policy istio-reader-clusterrolebinding -n istio-policies
 
 ## Remote secret distribution
 
-### Step 10: Distribute Istio remote secrets across clusters
+### Step 11: Distribute Istio remote secrets across clusters
 
 Apply the Policy that distributes Istio remote secrets for multi-cluster communication. The policy is bound to the `local-cluster` Placement so the ConfigurationPolicy runs on the hub. It uses managed cluster templates with `object-templates-raw` to:
 
