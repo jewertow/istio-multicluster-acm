@@ -2,7 +2,7 @@ apiVersion: policy.open-cluster-management.io/v1
 kind: Policy
 metadata:
   name: helloworld-service
-  namespace: istio-policies
+  namespace: sample-policies
   annotations:
     policy.open-cluster-management.io/categories: CM Configuration Management
     policy.open-cluster-management.io/standards: Istio Service Mesh
@@ -41,7 +41,7 @@ apiVersion: policy.open-cluster-management.io/v1
 kind: PlacementBinding
 metadata:
   name: mesh-clusters-helloworld-service
-  namespace: istio-policies
+  namespace: sample-policies
 placementRef:
   apiGroup: cluster.open-cluster-management.io
   kind: Placement
@@ -55,7 +55,7 @@ apiVersion: policy.open-cluster-management.io/v1
 kind: Policy
 metadata:
   name: helloworld-v1
-  namespace: istio-policies
+  namespace: sample-policies
   annotations:
     policy.open-cluster-management.io/categories: CM Configuration Management
     policy.open-cluster-management.io/standards: Istio Service Mesh
@@ -109,7 +109,7 @@ apiVersion: policy.open-cluster-management.io/v1
 kind: PlacementBinding
 metadata:
   name: mesh-clusters-v1-helloworld-v1
-  namespace: istio-policies
+  namespace: sample-policies
 placementRef:
   apiGroup: cluster.open-cluster-management.io
   kind: Placement
@@ -123,7 +123,7 @@ apiVersion: policy.open-cluster-management.io/v1
 kind: Policy
 metadata:
   name: helloworld-v2
-  namespace: istio-policies
+  namespace: sample-policies
   annotations:
     policy.open-cluster-management.io/categories: CM Configuration Management
     policy.open-cluster-management.io/standards: Istio Service Mesh
@@ -177,7 +177,7 @@ apiVersion: policy.open-cluster-management.io/v1
 kind: PlacementBinding
 metadata:
   name: mesh-clusters-v2-helloworld-v2
-  namespace: istio-policies
+  namespace: sample-policies
 placementRef:
   apiGroup: cluster.open-cluster-management.io
   kind: Placement

@@ -2,7 +2,7 @@ apiVersion: policy.open-cluster-management.io/v1
 kind: Policy
 metadata:
   name: sample-namespace
-  namespace: istio-policies
+  namespace: sample-policies
   annotations:
     policy.open-cluster-management.io/categories: CM Configuration Management
     policy.open-cluster-management.io/standards: Istio Service Mesh
@@ -33,7 +33,7 @@ apiVersion: policy.open-cluster-management.io/v1
 kind: PlacementBinding
 metadata:
   name: mesh-clusters-sample-namespace
-  namespace: istio-policies
+  namespace: sample-policies
 placementRef:
   apiGroup: cluster.open-cluster-management.io
   kind: Placement

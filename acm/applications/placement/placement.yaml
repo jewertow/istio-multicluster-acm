@@ -1,23 +1,43 @@
+apiVersion: cluster.open-cluster-management.io/v1beta2
+kind: ManagedClusterSetBinding
+metadata:
+  name: default
+  namespace: sample-policies
+spec:
+  clusterSet: default
+---
 apiVersion: cluster.open-cluster-management.io/v1beta1
 kind: Placement
 metadata:
-  name: mesh-clusters-v1
-  namespace: istio-policies
+  name: mesh-clusters
+  namespace: sample-policies
 spec:
   predicates:
     - requiredClusterSelector:
         labelSelector:
           matchLabels:
-            mesh-version: v1
+            mesh: enabled
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: mesh-clusters-v1
+  namespace: sample-policies
+spec:
+  predicates:
+    - requiredClusterSelector:
+        labelSelector:
+          matchLabels:
+            app-version: v1
 ---
 apiVersion: cluster.open-cluster-management.io/v1beta1
 kind: Placement
 metadata:
   name: mesh-clusters-v2
-  namespace: istio-policies
+  namespace: sample-policies
 spec:
   predicates:
     - requiredClusterSelector:
         labelSelector:
           matchLabels:
-            mesh-version: v2
+            app-version: v2
