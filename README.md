@@ -240,3 +240,72 @@ Verify the remote secrets were created on the managed clusters (one secret per r
 ```bash
 kubectl get secrets -n istio-system -l istio/multiCluster=true
 ```
+
+## Verification with sample applications
+
+### Step 12: Label managed clusters with mesh-version
+
+Label one cluster as `v1` and another as `v2`. The `v1` cluster will run helloworld-v1 and curl, while the `v2` cluster will run helloworld-v2:
+
+```bash
+kubectl label managedcluster <cluster-1-name> mesh-version=v1
+kubectl label managedcluster <cluster-2-name> mesh-version=v2
+```
+
+### Step 13: Create the Placements for v1 and v2 clusters
+
+Apply the Placements that select clusters by `mesh-version` label:
+
+```bash
+kubectl apply -f acm/applications/placement/
+```
+
+### Step 14: Create the sample namespace
+
+Apply the namespace policy to create the `sample` namespace with Istio sidecar injection enabled on all mesh clusters:
+
+```bash
+kubectl apply -f acm/applications/namespace/
+```
+
+Verify policy compliance:
+
+```bash
+kubectl get policy sample-namespace -n istio-policies
+```
+
+### Step 15: Deploy the helloworld application
+
+Apply the helloworld policies. This creates the helloworld Service on all mesh clusters, then deploys helloworld-v1 to v1 clusters and helloworld-v2 to v2 clusters:
+
+```bash
+kubectl apply -f acm/applications/helloworld/
+```
+
+Verify policy compliance:
+
+```bash
+kubectl get policy -n istio-policies | grep helloworld
+```
+
+### Step 16: Deploy the curl client
+
+Apply the curl policy to deploy the curl client on v1 clusters:
+
+```bash
+kubectl apply -f acm/applications/curl/
+```
+
+Verify policy compliance:
+
+```bash
+kubectl get policy curl -n istio-policies
+```
+
+### Step 17: Verify multicluster connectivity
+
+From the curl pod on the v1 cluster, send requests to the helloworld service. You should see responses from both v1 and v2:
+
+```bash
+kubectl exec -n sample -c curl "$(kubectl get pod -n sample -l app=curl -o jsonpath='{.items[0].metadata.name}')" -- curl -sS helloworld.sample:5000/hello
+```

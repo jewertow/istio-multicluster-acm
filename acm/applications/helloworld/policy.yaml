@@ -1,0 +1,188 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: helloworld-service
+  namespace: istio-policies
+  annotations:
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/standards: Istio Service Mesh
+    policy.open-cluster-management.io/controls: Application Management
+spec:
+  remediationAction: enforce
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: helloworld-service
+        spec:
+          remediationAction: enforce
+          severity: high
+          object-templates:
+            - complianceType: MustHave
+              objectDefinition:
+                apiVersion: v1
+                kind: Service
+                metadata:
+                  name: helloworld
+                  namespace: sample
+                  labels:
+                    app: helloworld
+                    service: helloworld
+                spec:
+                  ports:
+                    - port: 5000
+                      name: http
+                  selector:
+                    app: helloworld
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: mesh-clusters-helloworld-service
+  namespace: istio-policies
+placementRef:
+  apiGroup: cluster.open-cluster-management.io
+  kind: Placement
+  name: mesh-clusters
+subjects:
+  - apiGroup: policy.open-cluster-management.io
+    kind: Policy
+    name: helloworld-service
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: helloworld-v1
+  namespace: istio-policies
+  annotations:
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/standards: Istio Service Mesh
+    policy.open-cluster-management.io/controls: Application Management
+spec:
+  remediationAction: enforce
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: helloworld-v1
+        spec:
+          remediationAction: enforce
+          severity: high
+          object-templates:
+            - complianceType: MustHave
+              objectDefinition:
+                apiVersion: apps/v1
+                kind: Deployment
+                metadata:
+                  name: helloworld-v1
+                  namespace: sample
+                  labels:
+                    app: helloworld
+                    version: v1
+                spec:
+                  replicas: 1
+                  selector:
+                    matchLabels:
+                      app: helloworld
+                      version: v1
+                  template:
+                    metadata:
+                      labels:
+                        app: helloworld
+                        version: v1
+                    spec:
+                      containers:
+                        - name: helloworld
+                          image: registry.istio.io/release/examples-helloworld-v1:1.0
+                          resources:
+                            requests:
+                              cpu: "100m"
+                          imagePullPolicy: IfNotPresent
+                          ports:
+                            - containerPort: 5000
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: mesh-clusters-v1-helloworld-v1
+  namespace: istio-policies
+placementRef:
+  apiGroup: cluster.open-cluster-management.io
+  kind: Placement
+  name: mesh-clusters-v1
+subjects:
+  - apiGroup: policy.open-cluster-management.io
+    kind: Policy
+    name: helloworld-v1
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: helloworld-v2
+  namespace: istio-policies
+  annotations:
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/standards: Istio Service Mesh
+    policy.open-cluster-management.io/controls: Application Management
+spec:
+  remediationAction: enforce
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: helloworld-v2
+        spec:
+          remediationAction: enforce
+          severity: high
+          object-templates:
+            - complianceType: MustHave
+              objectDefinition:
+                apiVersion: apps/v1
+                kind: Deployment
+                metadata:
+                  name: helloworld-v2
+                  namespace: sample
+                  labels:
+                    app: helloworld
+                    version: v2
+                spec:
+                  replicas: 1
+                  selector:
+                    matchLabels:
+                      app: helloworld
+                      version: v2
+                  template:
+                    metadata:
+                      labels:
+                        app: helloworld
+                        version: v2
+                    spec:
+                      containers:
+                        - name: helloworld
+                          image: registry.istio.io/release/examples-helloworld-v2:1.0
+                          resources:
+                            requests:
+                              cpu: "100m"
+                          imagePullPolicy: IfNotPresent
+                          ports:
+                            - containerPort: 5000
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: mesh-clusters-v2-helloworld-v2
+  namespace: istio-policies
+placementRef:
+  apiGroup: cluster.open-cluster-management.io
+  kind: Placement
+  name: mesh-clusters-v2
+subjects:
+  - apiGroup: policy.open-cluster-management.io
+    kind: Policy
+    name: helloworld-v2

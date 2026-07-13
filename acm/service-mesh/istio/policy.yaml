@@ -41,6 +41,8 @@ spec:
                   updateStrategy:
                     type: InPlace
                   values:
+                    meshConfig:
+                      accessLogFile: /dev/stdout
                     global:
                       multiCluster:
                         clusterName: 'cluster-{{hub .ManagedClusterName hub}}'

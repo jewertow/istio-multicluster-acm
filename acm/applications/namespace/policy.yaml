@@ -1,0 +1,44 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: sample-namespace
+  namespace: istio-policies
+  annotations:
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/standards: Istio Service Mesh
+    policy.open-cluster-management.io/controls: Namespace Management
+spec:
+  remediationAction: enforce
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: sample-namespace
+        spec:
+          remediationAction: enforce
+          severity: high
+          object-templates:
+            - complianceType: MustHave
+              objectDefinition:
+                apiVersion: v1
+                kind: Namespace
+                metadata:
+                  name: sample
+                  labels:
+                    istio-injection: enabled
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: mesh-clusters-sample-namespace
+  namespace: istio-policies
+placementRef:
+  apiGroup: cluster.open-cluster-management.io
+  kind: Placement
+  name: mesh-clusters
+subjects:
+  - apiGroup: policy.open-cluster-management.io
+    kind: Policy
+    name: sample-namespace
