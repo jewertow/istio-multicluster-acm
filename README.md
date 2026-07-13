@@ -42,32 +42,9 @@ Apply the Placement and ManagedClusterSetBinding. The ManagedClusterSetBinding g
 kubectl apply -f acm/placement/
 ```
 
-## Namespace creation
-
-### Step 4: Ensure the istio-system and istio-cni namespaces on managed clusters
-
-Apply the Policy and PlacementBinding that enforce the `istio-system` and `istio-cni` namespaces on all mesh clusters:
-
-```bash
-kubectl apply -f acm/namespaces/
-```
-
-This creates:
-
-- **Policy** (`istio-namespaces`) — contains a ConfigurationPolicy that enforces the `istio-system` and `istio-cni` namespaces exist.
-- **PlacementBinding** — binds the `mesh-clusters` Placement to the Policy so it is applied to the selected clusters.
-
-Verify policy compliance:
-
-```bash
-kubectl get policy -n istio-policies
-```
-
-All targeted clusters should show `Compliant` once the namespaces have been created.
-
 ## Service Mesh operator
 
-### Step 5: Install the OpenShift Service Mesh 3 operator on managed clusters
+### Step 4: Install the OpenShift Service Mesh 3 operator on managed clusters
 
 Apply the Policy and PlacementBinding that install the Service Mesh operator via OLM on all mesh clusters:
 
@@ -91,6 +68,29 @@ Verify the operator is installed on managed clusters:
 ```bash
 kubectl get csv -n openshift-operators | grep servicemeshoperator
 ```
+
+## Namespace creation
+
+### Step 5: Ensure the istio-system and istio-cni namespaces on managed clusters
+
+Apply the Policy and PlacementBinding that enforce the `istio-system` and `istio-cni` namespaces on all mesh clusters:
+
+```bash
+kubectl apply -f acm/namespaces/
+```
+
+This creates:
+
+- **Policy** (`istio-namespaces`) — contains a ConfigurationPolicy that enforces the `istio-system` and `istio-cni` namespaces exist.
+- **PlacementBinding** — binds the `mesh-clusters` Placement to the Policy so it is applied to the selected clusters.
+
+Verify policy compliance:
+
+```bash
+kubectl get policy -n istio-policies
+```
+
+All targeted clusters should show `Compliant` once the namespaces have been created.
 
 ## Certificate distribution
 
@@ -126,9 +126,37 @@ Verify policy compliance:
 kubectl get policy istio-ca-certificate -n istio-policies
 ```
 
+## Istio installation
+
+### Step 7: Install Istio on managed clusters
+
+Apply the Policy and PlacementBinding that create the IstioCNI and Istio resources on all mesh clusters:
+
+```bash
+kubectl apply -f acm/istio/
+```
+
+This creates:
+
+- **Policy** (`istio`) — contains a ConfigurationPolicy that enforces an `IstioCNI` resource in the `istio-cni` namespace and an `Istio` resource in the `istio-system` namespace.
+- **PlacementBinding** — binds the `mesh-clusters` Placement to the Policy so it is applied to the selected clusters.
+
+Verify policy compliance:
+
+```bash
+kubectl get policy istio -n istio-policies
+```
+
+Verify Istio is running on managed clusters:
+
+```bash
+kubectl get istiocni -A
+kubectl get istio -A
+```
+
 ## Managed Service Accounts
 
-### Step 7: Create a ManagedServiceAccount per managed cluster
+### Step 8: Create a ManagedServiceAccount per managed cluster
 
 Apply the Policy that creates a ManagedServiceAccount in each managed cluster's namespace on the hub. The policy is bound to `local-cluster` so the ConfigurationPolicy runs on the hub itself. It uses `namespaceSelector` to match namespaces that are both managed cluster namespaces (`cluster.open-cluster-management.io/managedCluster` exists) and labeled `mesh=enabled`:
 
@@ -150,7 +178,7 @@ kubectl get managedserviceaccounts -A
 
 ## Remote secret distribution
 
-### Step 8: Distribute Istio remote secrets across clusters
+### Step 9: Distribute Istio remote secrets across clusters
 
 Apply the Policy that distributes Istio remote secrets for multi-cluster communication. The policy is bound to the `local-cluster` Placement so the ConfigurationPolicy runs on the hub. It uses managed cluster templates with `object-templates-raw` to:
 

@@ -1,0 +1,61 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: istio
+  namespace: istio-policies
+  annotations:
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/standards: Istio Service Mesh
+    policy.open-cluster-management.io/controls: Istio Installation
+spec:
+  remediationAction: enforce
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: istio
+        spec:
+          remediationAction: enforce
+          severity: high
+          object-templates:
+            - complianceType: MustHave
+              objectDefinition:
+                apiVersion: sailoperator.io/v1
+                kind: IstioCNI
+                metadata:
+                  name: default
+                spec:
+                  version: v1.30-latest
+                  namespace: istio-cni
+            - complianceType: MustHave
+              objectDefinition:
+                apiVersion: sailoperator.io/v1
+                kind: Istio
+                metadata:
+                  name: default
+                spec:
+                  version: v1.30-latest
+                  namespace: istio-system
+                  updateStrategy:
+                    type: InPlace
+                  values:
+                    global:
+                      multiCluster:
+                        clusterName: 'cluster-{{hub .ManagedClusterName hub}}'
+                      network: 'network-{{hub .ManagedClusterName hub}}'
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: mesh-clusters-istio
+  namespace: istio-policies
+placementRef:
+  apiGroup: cluster.open-cluster-management.io
+  kind: Placement
+  name: mesh-clusters
+subjects:
+  - apiGroup: policy.open-cluster-management.io
+    kind: Policy
+    name: istio
