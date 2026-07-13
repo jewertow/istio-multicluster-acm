@@ -63,12 +63,6 @@ Verify policy compliance:
 kubectl get policy servicemeshoperator -n istio-policies
 ```
 
-Verify the operator is installed on managed clusters:
-
-```bash
-kubectl get csv -n openshift-operators | grep servicemeshoperator
-```
-
 ## Namespace creation
 
 ### Step 5: Ensure the istio-system and istio-cni namespaces on managed clusters
@@ -170,15 +164,30 @@ Verify policy compliance:
 kubectl get policy managed-service-account -n istio-policies
 ```
 
-Verify the ManagedServiceAccounts were created (one per managed cluster):
+## Istio reader ClusterRoleBinding
+
+### Step 9: Bind the ManagedServiceAccount to the istio-reader ClusterRole
+
+Apply the Policy and PlacementBinding that create a ClusterRoleBinding on all mesh clusters, granting the `istio-reader-service-account` ManagedServiceAccount the `istio-reader-clusterrole-istio-system` ClusterRole:
 
 ```bash
-kubectl get managedserviceaccounts -A
+kubectl apply -f acm/reader-clusterrolebinding/
+```
+
+This creates:
+
+- **Policy** (`istio-reader-clusterrolebinding`) — contains a ConfigurationPolicy that enforces a ClusterRoleBinding binding the ManagedServiceAccount to the istio-reader ClusterRole.
+- **PlacementBinding** — binds the `mesh-clusters` Placement to the Policy so it is applied to the selected clusters.
+
+Verify policy compliance:
+
+```bash
+kubectl get policy istio-reader-clusterrolebinding -n istio-policies
 ```
 
 ## Remote secret distribution
 
-### Step 9: Distribute Istio remote secrets across clusters
+### Step 10: Distribute Istio remote secrets across clusters
 
 Apply the Policy that distributes Istio remote secrets for multi-cluster communication. The policy is bound to the `local-cluster` Placement so the ConfigurationPolicy runs on the hub. It uses managed cluster templates with `object-templates-raw` to:
 
