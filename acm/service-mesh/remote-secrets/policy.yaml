@@ -15,9 +15,6 @@ spec:
         spec:
           remediationAction: enforce
           severity: high
-          evaluationInterval:
-            compliant: 2h
-            noncompliant: 10m
           object-templates-raw: |
             {{- range $target := (lookup "cluster.open-cluster-management.io/v1" "ManagedCluster" "" "").items }}
             {{- if and (hasKey $target.metadata.labels "mesh") (eq (index $target.metadata.labels "mesh") "enabled") }}
@@ -68,6 +65,14 @@ spec:
                               token: {{ $token }}
                     {{- end }}
                     {{- end }}
+            {{- else }}
+            - complianceType: mustnothave
+              objectDefinition:
+                apiVersion: work.open-cluster-management.io/v1
+                kind: ManifestWork
+                metadata:
+                  name: istio-remote-secrets
+                  namespace: {{ $target.metadata.name }}
             {{- end }}
             {{- end }}
 ---
