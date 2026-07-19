@@ -18,23 +18,30 @@ spec:
           name: managed-service-account
         spec:
           severity: high
-          evaluationInterval:
-            compliant: 2h
-            noncompliant: 10m
-          namespaceSelector:
-            matchLabels:
-              mesh: enabled
-          object-templates:
+          object-templates-raw: |
+            {{- range $cluster := (lookup "cluster.open-cluster-management.io/v1" "ManagedCluster" "" "").items }}
+            {{- if and (hasKey $cluster.metadata.labels "mesh") (eq (index $cluster.metadata.labels "mesh") "enabled") }}
             - complianceType: musthave
               objectDefinition:
                 apiVersion: authentication.open-cluster-management.io/v1beta1
                 kind: ManagedServiceAccount
                 metadata:
                   name: istio-reader-service-account
+                  namespace: {{ $cluster.metadata.name }}
                 spec:
                   rotation:
                     enabled: true
                     validity: 24h
+            {{- else }}
+            - complianceType: mustnothave
+              objectDefinition:
+                apiVersion: authentication.open-cluster-management.io/v1beta1
+                kind: ManagedServiceAccount
+                metadata:
+                  name: istio-reader-service-account
+                  namespace: {{ $cluster.metadata.name }}
+            {{- end }}
+            {{- end }}
 ---
 apiVersion: cluster.open-cluster-management.io/v1beta1
 kind: Placement
