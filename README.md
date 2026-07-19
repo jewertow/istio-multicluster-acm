@@ -8,7 +8,7 @@ Deploy Istio across a fleet of OpenShift/Kubernetes clusters using ACM (Advanced
 - `kubectl` CLI configured to access the ACM hub cluster
 - Managed clusters imported into ACM
 
-## Managed clusters and Placement
+## Service Mesh Setup
 
 ### Step 1: Label managed clusters
 
@@ -39,17 +39,15 @@ kubectl create namespace istio-policies
 Apply the Placement and ManagedClusterSetBinding. The ManagedClusterSetBinding grants the `istio-policies` namespace access to the `default` ManagedClusterSet. The Placement selects managed clusters with the label `mesh=enabled` and is shared by all ACM policies targeting mesh clusters (namespaces, certificates, etc.):
 
 ```bash
-kubectl apply -f acm/service-mesh/placement/
+kubectl apply -f service-mesh/placement/
 ```
-
-## Service Mesh operator
 
 ### Step 4: Install the OpenShift Service Mesh 3 operator on managed clusters
 
 Apply the Policy and PlacementBinding that install the Service Mesh operator via OLM on all mesh clusters:
 
 ```bash
-kubectl apply -f acm/service-mesh/operator/
+kubectl apply -f service-mesh/operator/
 ```
 
 This creates:
@@ -63,14 +61,12 @@ Verify policy compliance:
 kubectl get policy servicemeshoperator -n istio-policies
 ```
 
-## Namespace creation
-
 ### Step 5: Ensure the istio-system and istio-cni namespaces on managed clusters
 
 Apply the Policy and PlacementBinding that enforce the `istio-system` and `istio-cni` namespaces on all mesh clusters:
 
 ```bash
-kubectl apply -f acm/service-mesh/namespaces/
+kubectl apply -f service-mesh/namespaces/
 ```
 
 This creates:
@@ -86,14 +82,12 @@ kubectl get policy -n istio-policies
 
 All targeted clusters should show `Compliant` once the namespaces have been created.
 
-## Certificate distribution
-
 ### Step 6: Create the CA certificates and distribute to managed clusters
 
 Apply the cert-manager resources and ACM policy that create and distribute the Istio CA certificate:
 
 ```bash
-kubectl apply -f acm/service-mesh/certificates/
+kubectl apply -f service-mesh/certificates/
 ```
 
 This creates the following cert-manager resources on the hub cluster:
@@ -120,14 +114,12 @@ Verify policy compliance:
 kubectl get policy istio-ca-certificate -n istio-policies
 ```
 
-## Istio installation
-
 ### Step 7: Install Istio on managed clusters
 
 Apply the Policy and PlacementBinding that create the IstioCNI and Istio resources on all mesh clusters:
 
 ```bash
-kubectl apply -f acm/service-mesh/istio/
+kubectl apply -f service-mesh/istio/
 ```
 
 This creates:
@@ -148,14 +140,12 @@ kubectl get istiocni -A
 kubectl get istio -A
 ```
 
-## East-west gateway
-
 ### Step 8: Deploy the east-west gateway on managed clusters
 
 Apply the Policy and PlacementBinding that create a Kubernetes Gateway for cross-network traffic on all mesh clusters:
 
 ```bash
-kubectl apply -f acm/service-mesh/east-west-gateway/
+kubectl apply -f service-mesh/east-west-gateway/
 ```
 
 This creates:
@@ -175,14 +165,12 @@ Verify the gateway is running on managed clusters:
 kubectl get gateways -n istio-system
 ```
 
-## Managed Service Accounts
-
 ### Step 9: Create a ManagedServiceAccount per managed cluster
 
 Apply the Policy that creates a ManagedServiceAccount in each managed cluster's namespace on the hub. The policy is bound to `local-cluster` so the ConfigurationPolicy runs on the hub itself. It uses `namespaceSelector` to match namespaces that are both managed cluster namespaces (`cluster.open-cluster-management.io/managedCluster` exists) and labeled `mesh=enabled`:
 
 ```bash
-kubectl apply -f acm/service-mesh/managed-service-accounts/
+kubectl apply -f service-mesh/managed-service-accounts/
 ```
 
 Verify policy compliance:
@@ -191,14 +179,12 @@ Verify policy compliance:
 kubectl get policy managed-service-account -n istio-policies
 ```
 
-## Istio reader ClusterRoleBinding
-
 ### Step 10: Bind the ManagedServiceAccount to the istio-reader ClusterRole
 
 Apply the Policy and PlacementBinding that create a ClusterRoleBinding on all mesh clusters, granting the `istio-reader-service-account` ManagedServiceAccount the `istio-reader-clusterrole-istio-system` ClusterRole:
 
 ```bash
-kubectl apply -f acm/service-mesh/reader-clusterrolebinding/
+kubectl apply -f service-mesh/reader-clusterrolebinding/
 ```
 
 This creates:
@@ -212,8 +198,6 @@ Verify policy compliance:
 kubectl get policy istio-reader-clusterrolebinding -n istio-policies
 ```
 
-## Remote secret distribution
-
 ### Step 11: Distribute Istio remote secrets across clusters
 
 Apply the Policy that distributes Istio remote secrets for multi-cluster communication. The policy is bound to the `local-cluster` Placement so the ConfigurationPolicy runs on the hub. It uses managed cluster templates with `object-templates-raw` to:
@@ -226,7 +210,7 @@ Apply the Policy that distributes Istio remote secrets for multi-cluster communi
 The ManifestWork agent on each managed cluster then creates the remote secrets in `istio-system`. This ensures that cluster A gets remote secrets for cluster B and C (and vice versa), enabling Istio to discover services across clusters.
 
 ```bash
-kubectl apply -f acm/service-mesh/remote-secrets/
+kubectl apply -f service-mesh/remote-secrets/
 ```
 
 Verify policy compliance:
@@ -241,9 +225,46 @@ Verify the remote secrets were created on the managed clusters (one secret per r
 kubectl get secrets -n istio-system -l istio/multiCluster=true
 ```
 
-## Verification with sample applications
+## GitOps Setup
 
-### Step 12: Create the sample-policies namespace
+### Step 1: Create the GitOps policy namespace
+
+Create a namespace on the hub cluster to hold GitOps policies:
+
+```bash
+kubectl create namespace gitops-policies
+```
+
+### Step 2: Create the Placement for GitOps clusters
+
+Apply the Placement and ManagedClusterSetBinding. The ManagedClusterSetBinding grants the `gitops-policies` namespace access to the `default` ManagedClusterSet. The Placement selects all managed clusters in the default ClusterSet:
+
+```bash
+kubectl apply -f gitops/placement/
+```
+
+### Step 3: Install the OpenShift GitOps operator on managed clusters
+
+Apply the Policy and PlacementBinding that install the OpenShift GitOps operator via OLM on all clusters:
+
+```bash
+kubectl apply -f gitops/operator/
+```
+
+This creates:
+
+- **Policy** (`gitops-operator`) — contains an OperatorPolicy that enforces a Subscription for the `openshift-gitops-operator` package from the `redhat-operators` catalog.
+- **PlacementBinding** — binds the `gitops-clusters` Placement to the Policy so it is applied to all clusters.
+
+Verify policy compliance:
+
+```bash
+kubectl get policy gitops-operator -n gitops-policies
+```
+
+## Applications Setup
+
+### Step 1: Create the sample-policies namespace
 
 Create a dedicated namespace on the hub cluster for sample application policies:
 
@@ -251,7 +272,7 @@ Create a dedicated namespace on the hub cluster for sample application policies:
 kubectl create namespace sample-policies
 ```
 
-### Step 13: Label managed clusters with app-version
+### Step 2: Label managed clusters with app-version
 
 Label one cluster as `v1` and another as `v2`. The `v1` cluster will run helloworld-v1 and curl, while the `v2` cluster will run helloworld-v2:
 
@@ -260,20 +281,20 @@ kubectl label managedcluster <cluster-1-name> app-version=v1
 kubectl label managedcluster <cluster-2-name> app-version=v2
 ```
 
-### Step 14: Create the Placements for v1 and v2 clusters
+### Step 3: Create the Placements for v1 and v2 clusters
 
 Apply the ManagedClusterSetBinding, mesh-clusters Placement, and version-specific Placements that select clusters by `app-version` label:
 
 ```bash
-kubectl apply -f acm/applications/placement/
+kubectl apply -f applications/placement/
 ```
 
-### Step 15: Create the sample namespace
+### Step 4: Create the sample namespace
 
 Apply the namespace policy to create the `sample` namespace with Istio sidecar injection enabled on all mesh clusters:
 
 ```bash
-kubectl apply -f acm/applications/namespace/
+kubectl apply -f applications/namespace/
 ```
 
 Verify policy compliance:
@@ -282,12 +303,12 @@ Verify policy compliance:
 kubectl get policy sample-namespace -n sample-policies
 ```
 
-### Step 16: Deploy the helloworld application
+### Step 5: Deploy the helloworld application
 
 Apply the helloworld policies. This creates the helloworld Service on all mesh clusters, then deploys helloworld-v1 to v1 clusters and helloworld-v2 to v2 clusters:
 
 ```bash
-kubectl apply -f acm/applications/helloworld/
+kubectl apply -f applications/helloworld/
 ```
 
 Verify policy compliance:
@@ -296,12 +317,12 @@ Verify policy compliance:
 kubectl get policy -n sample-policies | grep helloworld
 ```
 
-### Step 17: Deploy the curl client
+### Step 6: Deploy the curl client
 
 Apply the curl policy to deploy the curl client on v1 clusters:
 
 ```bash
-kubectl apply -f acm/applications/curl/
+kubectl apply -f applications/curl/
 ```
 
 Verify policy compliance:
@@ -310,7 +331,7 @@ Verify policy compliance:
 kubectl get policy curl -n sample-policies
 ```
 
-### Step 18: Verify multicluster connectivity
+### Step 7: Verify multicluster connectivity
 
 From the curl pod on the v1 cluster, send requests to the helloworld service. You should see responses from both v1 and v2:
 
