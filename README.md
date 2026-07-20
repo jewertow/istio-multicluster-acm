@@ -1,6 +1,6 @@
-# Istio Multi-Cluster GitOps
+# Scalable Multi-Cluster Istio with ACM Policies
 
-Deploy Istio across a fleet of OpenShift/Kubernetes clusters using ACM (Advanced Cluster Management) and ArgoCD.
+Simplify multi-cluster Istio deployment using ACM (Advanced Cluster Management) Governance Framework. Apply a single set of policies once, then scale the mesh to any number of clusters by adding a label.
 
 ## Prerequisites
 
