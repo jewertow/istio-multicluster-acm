@@ -8,4 +8,4 @@ spec:
     - requiredClusterSelector:
         labelSelector:
           matchLabels:
-            mesh: enabled
+            meshID: global-mesh

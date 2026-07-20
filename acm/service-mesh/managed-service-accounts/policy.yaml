@@ -20,7 +20,7 @@ spec:
           severity: high
           object-templates-raw: |
             {{- range $cluster := (lookup "cluster.open-cluster-management.io/v1" "ManagedCluster" "" "").items }}
-            {{- if and (hasKey $cluster.metadata.labels "mesh") (eq (index $cluster.metadata.labels "mesh") "enabled") }}
+            {{- if and (hasKey $cluster.metadata.labels "meshID") (eq (index $cluster.metadata.labels "meshID") "global-mesh") }}
             - complianceType: musthave
               objectDefinition:
                 apiVersion: authentication.open-cluster-management.io/v1beta1
