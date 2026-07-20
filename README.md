@@ -78,14 +78,16 @@ graph TD
     RS -->|runs on hub| Hub
 ```
 
-## Prerequisites
+## Demo
+
+### Prerequisites
 
 - OpenShift or Kubernetes cluster with ACM hub installed
 - `kubectl` CLI configured to access the ACM hub cluster
 - Managed clusters imported into ACM
 - (Optional) cert-manager operator installed on the hub cluster — only required if you want to use cert-manager to generate the Istio CA certificate (see [Step 2](#step-2-optional-create-ca-certificates-with-cert-manager)). On OpenShift, install it via OperatorHub by subscribing to the `openshift-cert-manager-operator` package.
 
-## Step 1: Create the policy namespace
+### Step 1: Create the policy namespace
 
 Create a namespace on the hub cluster to hold ACM policies:
 
@@ -93,7 +95,7 @@ Create a namespace on the hub cluster to hold ACM policies:
 kubectl create namespace global-mesh-policies
 ```
 
-## Step 2 (Optional): Create CA certificates with cert-manager
+### Step 2 (Optional): Create CA certificates with cert-manager
 
 If you want to use cert-manager to generate the Istio CA certificate, apply the cert-manager resources. This creates a self-signed ClusterIssuer, a root CA Certificate/Issuer, and an intermediate Istio CA Certificate. The resulting `cacerts` Secret will be used by the `istio-ca-certificate` policy to distribute the CA to managed clusters.
 
@@ -109,7 +111,7 @@ Verify the certificates are ready:
 kubectl get certificates -n global-mesh-policies
 ```
 
-## Step 3: Create Placements and ManagedClusterSetBinding
+### Step 3: Create Placements and ManagedClusterSetBinding
 
 Create the ManagedClusterSetBinding and both Placements in a single command. The ManagedClusterSetBinding grants the `global-mesh-policies` namespace access to the `default` ManagedClusterSet. The `global-mesh-clusters` Placement selects managed clusters labeled `meshID=global-mesh`. The `local-cluster` Placement selects the hub cluster:
 
@@ -149,7 +151,7 @@ spec:
 EOF
 ```
 
-## Step 4: Apply all policies
+### Step 4: Apply all policies
 
 Apply all service mesh policies:
 
@@ -167,7 +169,7 @@ This creates the following policies in the `global-mesh-policies` namespace:
 - **`managed-service-account`** — creates a ManagedServiceAccount per mesh cluster on the hub (runs on `local-cluster`).
 - **`remote-secrets`** — distributes Istio remote secrets across clusters via ManifestWork (runs on `local-cluster`).
 
-## Step 5: Create PolicySets
+### Step 5: Create PolicySets
 
 Create two PolicySets to bind the policies to their respective Placements.
 
@@ -234,7 +236,7 @@ subjects:
 EOF
 ```
 
-## Step 6: Label managed clusters
+### Step 6: Label managed clusters
 
 Label each cluster that should join the Istio mesh:
 
@@ -254,7 +256,7 @@ Verify all policies are compliant:
 kubectl get policy -n global-mesh-policies
 ```
 
-## Verification with sample applications
+### Verification with sample applications
 
 ### Step 7: Create the sample-policies namespace
 
