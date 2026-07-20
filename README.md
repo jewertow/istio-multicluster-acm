@@ -2,6 +2,68 @@
 
 Simplify multi-cluster Istio deployment using ACM (Advanced Cluster Management) Governance Framework. Apply a single set of policies once, then scale the mesh to any number of clusters by adding a label.
 
+## Architecture
+
+```mermaid
+graph TD
+    Hub["ACM Hub Cluster"]
+
+    subgraph PolicySets
+        SpokePS["spoke-policy-set"]
+        HubPS["hub-policy-set"]
+    end
+
+    subgraph Spoke Policies
+        OP["servicemeshoperator"]
+        CA["ca-certificate"]
+        CNI["cni"]
+        CP["control-plane"]
+        EW["east-west-gateway"]
+    end
+
+    subgraph Hub Policies
+        MSA["managed-service-account"]
+        RS["remote-secrets"]
+    end
+
+    subgraph Managed Clusters
+        C1["Cluster 1\nmeshID: global-mesh"]
+        C2["Cluster 2\nmeshID: global-mesh"]
+        CN["Cluster N\nmeshID: global-mesh"]
+    end
+
+    Hub --> SpokePS
+    Hub --> HubPS
+
+    SpokePS --> OP
+    SpokePS --> CA
+    SpokePS --> CNI
+    SpokePS --> CP
+    SpokePS --> EW
+
+    HubPS --> MSA
+    HubPS --> RS
+
+    OP -->|enforced on| C1
+    OP -->|enforced on| C2
+    OP -->|enforced on| CN
+    CA -->|enforced on| C1
+    CA -->|enforced on| C2
+    CA -->|enforced on| CN
+    CNI -->|enforced on| C1
+    CNI -->|enforced on| C2
+    CNI -->|enforced on| CN
+    CP -->|enforced on| C1
+    CP -->|enforced on| C2
+    CP -->|enforced on| CN
+    EW -->|enforced on| C1
+    EW -->|enforced on| C2
+    EW -->|enforced on| CN
+
+    MSA -->|runs on hub| Hub
+    RS -->|runs on hub| Hub
+```
+
 ## Prerequisites
 
 - OpenShift or Kubernetes cluster with ACM hub installed
