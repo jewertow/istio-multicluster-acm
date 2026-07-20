@@ -1,12 +1,12 @@
 apiVersion: policy.open-cluster-management.io/v1
 kind: Policy
 metadata:
-  name: istio-namespaces
+  name: istio-cni
   namespace: istio-policies
   annotations:
     policy.open-cluster-management.io/categories: CM Configuration Management
     policy.open-cluster-management.io/standards: Istio Service Mesh
-    policy.open-cluster-management.io/controls: Namespace Management
+    policy.open-cluster-management.io/controls: Istio Installation
 spec:
   remediationAction: enforce
   disabled: false
@@ -15,7 +15,7 @@ spec:
         apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
         metadata:
-          name: istio-namespaces
+          name: istio-cni
         spec:
           remediationAction: enforce
           severity: high
@@ -25,20 +25,21 @@ spec:
                 apiVersion: v1
                 kind: Namespace
                 metadata:
-                  name: istio-system
-                  labels:
-                    topology.istio.io/network: 'network-{{hub .ManagedClusterName hub}}'
+                  name: istio-cni
             - complianceType: MustHave
               objectDefinition:
-                apiVersion: v1
-                kind: Namespace
+                apiVersion: sailoperator.io/v1
+                kind: IstioCNI
                 metadata:
-                  name: istio-cni
+                  name: default
+                spec:
+                  version: v1.30-latest
+                  namespace: istio-cni
 ---
 apiVersion: policy.open-cluster-management.io/v1
 kind: PlacementBinding
 metadata:
-  name: mesh-clusters-istio-namespaces
+  name: mesh-clusters-istio-cni
   namespace: istio-policies
 placementRef:
   apiGroup: cluster.open-cluster-management.io
@@ -47,4 +48,4 @@ placementRef:
 subjects:
   - apiGroup: policy.open-cluster-management.io
     kind: Policy
-    name: istio-namespaces
+    name: istio-cni
