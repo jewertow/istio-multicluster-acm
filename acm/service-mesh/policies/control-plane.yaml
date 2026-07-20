@@ -1,8 +1,8 @@
 apiVersion: policy.open-cluster-management.io/v1
 kind: Policy
 metadata:
-  name: istio
-  namespace: istio-policies
+  name: control-plane
+  namespace: global-mesh-policies
   annotations:
     policy.open-cluster-management.io/categories: CM Configuration Management
     policy.open-cluster-management.io/standards: Istio Service Mesh
@@ -15,20 +15,19 @@ spec:
         apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
         metadata:
-          name: istio
+          name: control-plane
         spec:
           remediationAction: enforce
           severity: high
           object-templates:
             - complianceType: MustHave
               objectDefinition:
-                apiVersion: sailoperator.io/v1
-                kind: IstioCNI
+                apiVersion: v1
+                kind: Namespace
                 metadata:
-                  name: default
-                spec:
-                  version: v1.30-latest
-                  namespace: istio-cni
+                  name: istio-system
+                  labels:
+                    topology.istio.io/network: 'network-{{hub .ManagedClusterName hub}}'
             - complianceType: MustHave
               objectDefinition:
                 apiVersion: sailoperator.io/v1
@@ -47,17 +46,29 @@ spec:
                       multiCluster:
                         clusterName: 'cluster-{{hub .ManagedClusterName hub}}'
                       network: 'network-{{hub .ManagedClusterName hub}}'
----
-apiVersion: policy.open-cluster-management.io/v1
-kind: PlacementBinding
-metadata:
-  name: mesh-clusters-istio
-  namespace: istio-policies
-placementRef:
-  apiGroup: cluster.open-cluster-management.io
-  kind: Placement
-  name: mesh-clusters
-subjects:
-  - apiGroup: policy.open-cluster-management.io
-    kind: Policy
-    name: istio
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: control-plane-reader-clusterrolebinding
+        spec:
+          remediationAction: enforce
+          severity: high
+          object-templates:
+            - complianceType: MustHave
+              objectDefinition:
+                apiVersion: rbac.authorization.k8s.io/v1
+                kind: ClusterRoleBinding
+                metadata:
+                  name: istio-reader-clusterrole-istio-system-acm
+                  labels:
+                    app: istio-reader
+                    app.kubernetes.io/name: istio-reader
+                roleRef:
+                  apiGroup: rbac.authorization.k8s.io
+                  kind: ClusterRole
+                  name: istio-reader-clusterrole-istio-system
+                subjects:
+                  - kind: ServiceAccount
+                    name: istio-reader-service-account
+                    namespace: open-cluster-management-agent-addon

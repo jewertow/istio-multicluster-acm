@@ -2,7 +2,7 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: root-ca
-  namespace: istio-policies
+  namespace: global-mesh-policies
 spec:
   isCA: true
   commonName: Root CA
@@ -20,7 +20,7 @@ apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   name: root-ca
-  namespace: istio-policies
+  namespace: global-mesh-policies
 spec:
   ca:
     secretName: root-ca-cert

@@ -16,7 +16,7 @@ spec:
     - requiredClusterSelector:
         labelSelector:
           matchLabels:
-            mesh: enabled
+            meshID: global-mesh
 ---
 apiVersion: cluster.open-cluster-management.io/v1beta1
 kind: Placement

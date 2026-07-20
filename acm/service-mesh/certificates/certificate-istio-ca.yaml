@@ -2,12 +2,12 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: istio-ca
-  namespace: istio-policies
+  namespace: global-mesh-policies
 spec:
   isCA: true
   commonName: Istio CA
   duration: 43800h
-  secretName: istio-ca-cert
+  secretName: cacerts
   privateKey:
     algorithm: RSA
     size: 4096
