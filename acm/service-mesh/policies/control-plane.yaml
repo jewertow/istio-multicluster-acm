@@ -1,8 +1,8 @@
 apiVersion: policy.open-cluster-management.io/v1
 kind: Policy
 metadata:
-  name: istio-control-plane
-  namespace: istio-policies
+  name: control-plane
+  namespace: global-mesh-policies
   annotations:
     policy.open-cluster-management.io/categories: CM Configuration Management
     policy.open-cluster-management.io/standards: Istio Service Mesh
@@ -15,7 +15,7 @@ spec:
         apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
         metadata:
-          name: istio-control-plane
+          name: control-plane
         spec:
           remediationAction: enforce
           severity: high
@@ -50,7 +50,7 @@ spec:
         apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
         metadata:
-          name: istio-control-plane-reader-clusterrolebinding
+          name: control-plane-reader-clusterrolebinding
         spec:
           remediationAction: enforce
           severity: high
@@ -72,17 +72,3 @@ spec:
                   - kind: ServiceAccount
                     name: istio-reader-service-account
                     namespace: open-cluster-management-agent-addon
----
-apiVersion: policy.open-cluster-management.io/v1
-kind: PlacementBinding
-metadata:
-  name: mesh-clusters-istio-control-plane
-  namespace: istio-policies
-placementRef:
-  apiGroup: cluster.open-cluster-management.io
-  kind: Placement
-  name: mesh-clusters
-subjects:
-  - apiGroup: policy.open-cluster-management.io
-    kind: Policy
-    name: istio-control-plane

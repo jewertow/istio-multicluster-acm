@@ -2,7 +2,7 @@ apiVersion: policy.open-cluster-management.io/v1
 kind: Policy
 metadata:
   name: east-west-gateway
-  namespace: istio-policies
+  namespace: global-mesh-policies
   annotations:
     policy.open-cluster-management.io/categories: CM Configuration Management
     policy.open-cluster-management.io/standards: Istio Service Mesh
@@ -38,17 +38,3 @@ spec:
                       protocol: TLS
                       tls:
                         mode: Passthrough
----
-apiVersion: policy.open-cluster-management.io/v1
-kind: PlacementBinding
-metadata:
-  name: mesh-clusters-east-west-gateway
-  namespace: istio-policies
-placementRef:
-  apiGroup: cluster.open-cluster-management.io
-  kind: Placement
-  name: mesh-clusters
-subjects:
-  - apiGroup: policy.open-cluster-management.io
-    kind: Policy
-    name: east-west-gateway

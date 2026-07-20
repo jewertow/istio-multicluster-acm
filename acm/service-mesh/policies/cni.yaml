@@ -1,8 +1,8 @@
 apiVersion: policy.open-cluster-management.io/v1
 kind: Policy
 metadata:
-  name: istio-cni
-  namespace: istio-policies
+  name: cni
+  namespace: global-mesh-policies
   annotations:
     policy.open-cluster-management.io/categories: CM Configuration Management
     policy.open-cluster-management.io/standards: Istio Service Mesh
@@ -15,7 +15,7 @@ spec:
         apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
         metadata:
-          name: istio-cni
+          name: cni
         spec:
           remediationAction: enforce
           severity: high
@@ -35,17 +35,3 @@ spec:
                 spec:
                   version: v1.30-latest
                   namespace: istio-cni
----
-apiVersion: policy.open-cluster-management.io/v1
-kind: PlacementBinding
-metadata:
-  name: mesh-clusters-istio-cni
-  namespace: istio-policies
-placementRef:
-  apiGroup: cluster.open-cluster-management.io
-  kind: Placement
-  name: mesh-clusters
-subjects:
-  - apiGroup: policy.open-cluster-management.io
-    kind: Policy
-    name: istio-cni
