@@ -2,6 +2,20 @@
 
 Simplify multi-cluster Istio deployment using ACM (Advanced Cluster Management) Governance Framework. Apply a single set of policies once, then scale the mesh to any number of clusters by adding a label.
 
+## The problem
+
+Deploying Istio in multi-primary mode requires repeating the same steps on every cluster: install the operator, distribute the CA certificate, deploy CNI, configure the control plane, and set up the east-west gateway. That alone is 5 operations per cluster. On top of that, each cluster needs a remote secret for every other cluster so that control planes can discover services across the mesh — that's n * (n - 1) operations.
+
+| Clusters | Per-cluster setup (5 * n) | Remote secrets (n * (n-1)) | **Total** |
+|----------|--------------------------|----------------------------|-----------|
+| 2        | 10                       | 2                          | **12**    |
+| 3        | 15                       | 6                          | **21**    |
+| 100      | 500                      | 9,900                      | **10,400**|
+
+Adding or removing a single cluster requires touching every existing cluster to update remote secrets — the operational cost grows quadratically.
+
+**This project reduces it to a constant:** apply 7 policies once, then add or remove clusters from the mesh by toggling a single label (`meshID: global-mesh`). The policies handle everything automatically, including the n * (n - 1) remote secret distribution.
+
 ## Architecture
 
 ```mermaid
