@@ -360,7 +360,7 @@ metadata:
 spec:
   argoServer:
     cluster: local-cluster
-    namespace: openshift-gitops
+    argoNamespace: openshift-gitops
   placementRef:
     apiVersion: cluster.open-cluster-management.io/v1beta1
     kind: Placement
