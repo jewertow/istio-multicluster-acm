@@ -258,7 +258,15 @@ kubectl get policy -n global-mesh-policies
 
 ### GitOps Pull Model Deployment
 
-After the service mesh is deployed, you can set up the GitOps pull model to deploy applications across all clusters using Argo CD ApplicationSets. This installs the OpenShift GitOps operator on every cluster in the default ManagedClusterSet via an OperatorPolicy and registers them with the hub's Argo CD instance via a GitOpsCluster resource. The GitOpsCluster is required because ApplicationSet's `clusterDecisionResource` generator needs managed clusters registered as Argo CD cluster secrets to resolve Placement decisions into deployment targets:
+After the service mesh is deployed, you can set up the GitOps pull model to deploy applications across all clusters using Argo CD ApplicationSets. This installs the OpenShift GitOps operator on every cluster in the default ManagedClusterSet via an OperatorPolicy and registers them with the hub's Argo CD instance via a GitOpsCluster resource.
+
+Create the policy namespace:
+
+```bash
+kubectl create namespace gitops-policies
+```
+
+Create the ManagedClusterSetBinding, Placement, OperatorPolicy, and PlacementBinding:
 
 ```bash
 kubectl apply -f - <<EOF
@@ -266,7 +274,7 @@ apiVersion: cluster.open-cluster-management.io/v1beta2
 kind: ManagedClusterSetBinding
 metadata:
   name: default
-  namespace: openshift-gitops
+  namespace: gitops-policies
 spec:
   clusterSet: default
 ---
@@ -274,14 +282,14 @@ apiVersion: cluster.open-cluster-management.io/v1beta1
 kind: Placement
 metadata:
   name: all-clusters
-  namespace: openshift-gitops
+  namespace: gitops-policies
 spec: {}
 ---
 apiVersion: policy.open-cluster-management.io/v1
 kind: Policy
 metadata:
   name: openshift-gitops-operator
-  namespace: openshift-gitops
+  namespace: gitops-policies
 spec:
   remediationAction: enforce
   disabled: false
@@ -313,7 +321,7 @@ apiVersion: policy.open-cluster-management.io/v1
 kind: PlacementBinding
 metadata:
   name: openshift-gitops-operator
-  namespace: openshift-gitops
+  namespace: gitops-policies
 placementRef:
   apiGroup: cluster.open-cluster-management.io
   kind: Placement
@@ -322,6 +330,27 @@ subjects:
   - apiGroup: policy.open-cluster-management.io
     kind: Policy
     name: openshift-gitops-operator
+EOF
+```
+
+Once the operator is installed and the `openshift-gitops` namespace is created, register managed clusters with the hub's Argo CD instance. The GitOpsCluster is required because ApplicationSet's `clusterDecisionResource` generator needs managed clusters registered as Argo CD cluster secrets to resolve Placement decisions into deployment targets:
+
+```bash
+kubectl apply -f - <<EOF
+apiVersion: cluster.open-cluster-management.io/v1beta2
+kind: ManagedClusterSetBinding
+metadata:
+  name: default
+  namespace: openshift-gitops
+spec:
+  clusterSet: default
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: all-clusters
+  namespace: openshift-gitops
+spec: {}
 ---
 apiVersion: apps.open-cluster-management.io/v1beta1
 kind: GitOpsCluster
