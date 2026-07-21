@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: curl
+  namespace: openshift-gitops
+spec:
+  generators:
+    - clusterDecisionResource:
+        configMapRef: acm-placement
+        labelSelector:
+          matchLabels:
+            cluster.open-cluster-management.io/placement: mesh-clusters-v1
+        requeueAfterSeconds: 180
+  template:
+    metadata:
+      name: curl
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/jewertow/upstream-istio.git
+        targetRevision: helloworld-samples
+        path: samples/curl
+        directory:
+          include: 'curl.yaml'
+      destination:
+        namespace: sample
+        server: '{{server}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        managedNamespaceMetadata:
+          labels:
+            istio-injection: enabled

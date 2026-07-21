@@ -368,6 +368,49 @@ spec:
 EOF
 ```
 
+Create the Placements and `acm-placement` ConfigMap required by the `clusterDecisionResource` generator:
+
+```bash
+kubectl apply -f argocd/placement/
+```
+
+Label one cluster as `v1` and another as `v2`:
+
+```bash
+kubectl label managedcluster <cluster-1-name> app-version=v1
+kubectl label managedcluster <cluster-2-name> app-version=v2
+```
+
+Deploy the sample applications via ApplicationSets. Each ApplicationSet uses the [bjw-s/app-template](https://bjw-s-labs.github.io/helm-charts/docs/app-template/) Helm chart and creates the `sample` namespace with Istio sidecar injection enabled:
+
+```bash
+kubectl apply -f argocd/applicationsets/
+```
+
+This creates the following ApplicationSets:
+
+- **`helloworld-v1`** — deploys helloworld v1 (Service + Deployment) on clusters labeled `app-version=v1`.
+- **`helloworld-v2`** — deploys helloworld v2 (Service + Deployment) on clusters labeled `app-version=v2`.
+- **`curl`** — deploys the curl client on clusters labeled `app-version=v1`.
+
+Verify the ApplicationSets were created:
+
+```bash
+kubectl get applicationsets -n openshift-gitops
+```
+
+Verify the generated Applications:
+
+```bash
+kubectl get applications -n openshift-gitops
+```
+
+Verify multicluster connectivity from the curl pod on the v1 cluster:
+
+```bash
+kubectl exec -n sample -c curl "$(kubectl get pod -n sample -l app=curl -o jsonpath='{.items[0].metadata.name}')" -- curl -sS helloworld.sample:5000/hello
+```
+
 ### Verification with sample applications
 
 ### Step 7: Create the sample-policies namespace
