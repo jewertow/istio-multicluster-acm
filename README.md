@@ -256,6 +256,89 @@ Verify all policies are compliant:
 kubectl get policy -n global-mesh-policies
 ```
 
+### GitOps Pull Model Deployment
+
+After the service mesh is deployed, you can set up the GitOps pull model to deploy applications across all clusters using Argo CD ApplicationSets. This installs the OpenShift GitOps operator on every cluster in the default ManagedClusterSet via an OperatorPolicy and registers them with the hub's Argo CD instance via a GitOpsCluster resource. The GitOpsCluster is required because ApplicationSet's `clusterDecisionResource` generator needs managed clusters registered as Argo CD cluster secrets to resolve Placement decisions into deployment targets:
+
+```bash
+kubectl apply -f - <<EOF
+apiVersion: cluster.open-cluster-management.io/v1beta2
+kind: ManagedClusterSetBinding
+metadata:
+  name: default
+  namespace: openshift-gitops
+spec:
+  clusterSet: default
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: all-clusters
+  namespace: openshift-gitops
+spec: {}
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: openshift-gitops-operator
+  namespace: openshift-gitops
+spec:
+  remediationAction: enforce
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1beta1
+        kind: OperatorPolicy
+        metadata:
+          name: openshift-gitops-operator
+        spec:
+          remediationAction: enforce
+          severity: high
+          operatorGroup:
+            name: global-operators
+            namespace: openshift-operators
+          subscription:
+            name: openshift-gitops-operator
+            namespace: openshift-operators
+            channel: latest
+            source: redhat-operators
+            sourceNamespace: openshift-marketplace
+          upgradeApproval: Automatic
+          complianceType: musthave
+          removalBehavior:
+            operatorGroups: DeleteIfUnused
+            customResourceDefinitions: Keep
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: openshift-gitops-operator
+  namespace: openshift-gitops
+placementRef:
+  apiGroup: cluster.open-cluster-management.io
+  kind: Placement
+  name: all-clusters
+subjects:
+  - apiGroup: policy.open-cluster-management.io
+    kind: Policy
+    name: openshift-gitops-operator
+---
+apiVersion: apps.open-cluster-management.io/v1beta1
+kind: GitOpsCluster
+metadata:
+  name: all-clusters
+  namespace: openshift-gitops
+spec:
+  argoServer:
+    cluster: local-cluster
+    namespace: openshift-gitops
+  placementRef:
+    apiVersion: cluster.open-cluster-management.io/v1beta1
+    kind: Placement
+    name: all-clusters
+EOF
+```
+
 ### Verification with sample applications
 
 ### Step 7: Create the sample-policies namespace
